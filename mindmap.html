@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paperclip 调研 · 交互思维导图</title>
+<style>
+  :root { --bg:#0f1115; --fg:#e8eaf0; --muted:#9aa3b2; --accent:#7cc4ff; --card:#171b22; --border:#262c36; }
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--fg); font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; margin:0; padding:24px; line-height:1.6; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  .sub { color:var(--muted); font-size:13px; margin-bottom:16px; }
+  .toolbar { margin-bottom:16px; display:flex; gap:8px; }
+  button { background:var(--card); color:var(--fg); border:1px solid var(--border); border-radius:8px; padding:6px 14px; cursor:pointer; font-size:13px; }
+  button:hover { border-color:var(--accent); }
+  ul.tree, ul.tree ul { list-style:none; margin:0; padding-left:22px; }
+  ul.tree { padding-left:0; }
+  li.node { margin:2px 0; }
+  .label { cursor:pointer; display:inline-block; padding:3px 10px; border-radius:8px; }
+  .label:hover { background:var(--card); }
+  .label .caret { display:inline-block; width:16px; color:var(--accent); font-size:12px; }
+  .label .text { font-size:14px; }
+  li.leaf > .label { cursor:default; }
+  li.leaf > .label:hover { background:none; }
+  li.leaf > .label .text { color:var(--muted); font-size:13px; }
+  li.root > .label .text { font-size:17px; font-weight:700; }
+  li.l1 > .label .text { font-size:15px; font-weight:600; color:var(--accent); }
+  ul.collapsed { display:none; }
+  .src { margin-top:24px; font-size:12px; color:var(--muted); }
+  .src a { color:var(--accent); }
+</style>
+</head>
+<body>
+<h1>Paperclip · 交互思维导图</h1>
+<div class="sub">paperclipai/paperclip 调研 · 2026-10-02 · 点击节点展开 / 折叠</div>
+<div class="toolbar">
+  <button id="expandAll">全部展开</button>
+  <button id="collapseAll">全部折叠</button>
+</div>
+<ul class="tree" id="tree"></ul>
+<div class="src">完整报告见 <a href="https://github.com/ringozzt/paperclip-research">ringozzt/paperclip-research · README.md</a> ｜ 上游 <a href="https://github.com/paperclipai/paperclip">paperclipai/paperclip</a></div>
+<script>
+const data = ["Paperclip 调研：管 agent 的公司", [
+  ["项目快照", [
+    "paperclipai/paperclip · MIT · 2026-03-02 创建（约 7 个月）",
+    "95,678 star / 16,231 fork / 454 watch · 4,696 commits · 26 releases",
+    "增长：2026-07-14 约 73.6k → 2026-10-02 95.7k（两个半月 +22k）",
+    "Node.js server + React UI + 嵌入式 PostgreSQL · 端口 3100",
+    "npm paperclipai（calver）/ @paperclipai/server / plugin-sdk / skills-catalog",
+    "npx paperclipai onboard --yes 即跑 · Docker ghcr.io/paperclipai/paperclip",
+    "paperclip.ing / docs.paperclip.ing / X @papercliping / Discord",
+    "Paperclip Cloud 在 waitlist（云托管版在路上）"
+  ]],
+  ["一句话定位", [
+    "If OpenClaw is an employee, Paperclip is the company.",
+    "看似任务管理器，实则是 org chart + 预算 + 治理 + agent 协同",
+    "管 agent 的公司，不是 agent 本体"
+  ]],
+  ["核心思想：heartbeat", [
+    ["口号", [
+      "If it can receive a heartbeat, it's hired.",
+      "只要能收心跳，就是员工"
+    ]],
+    ["heartbeat vs chat session", [
+      "chat session：push-based、人驱动，context window 一关 worker 就没了",
+      "heartbeat worker：loop——按时醒来 → 问服务器欠什么活 → 干一个单元 → 写回结果 → 睡",
+      "这是“主动性”的基础设施化"
+    ]],
+    ["兼容即 headcount", [
+      "OpenClaw / Claude Code / Codex / Cursor / Gemini CLI / OpenCode / Pi / Hermes / Grok Build / Kimi Code",
+      "Bash 和 HTTP 不是 agent 产品，是 transport——但也算员工",
+      "per-agent 自选模型和 harness，任务/skills/历史留在同一组织"
+    ]],
+    ["产品立场（DESIGN.md）", [
+      "operational control plane：org chart、任务、心跳、预算、审批、审计",
+      "每屏只回答：发生了什么、需不需要我、我该干什么"
+    ]]
+  ]],
+  ["四支柱", [
+    "Agentic Task Manager：Declare intent. Agents work. You verify.",
+    "Org Chart for Agents：12 角色（ceo/cto/cmo/cfo/security/engineer/designer/pm/qa/devops/researcher/general），人和 agent 混编汇报线",
+    "Agent Employee Training：Skill Studio、evals、agent 绩效考核、版本回滚",
+    "Agentic OS：跨 provider runtime、沙盒、SSO/GRC/RBAC、成本控制、数据沉淀"
+  ]],
+  ["优势", [
+    "BYOA：10+ harness，per-agent 自选模型与运行时",
+    "心跳执行：按分配/消息/schedule 醒来，delegation 沿 org chart 流动",
+    "原子任务签出：single assignee + execution lock，防抢单",
+    "持久工作上下文：任务/评论/文档留 Paperclip，adapter 恢复 session，重启不丢",
+    "带回滚的治理：审批门强制执行，配置版本化，改坏可滚回",
+    "可问责的连接：human access / agent eligibility / gateway action 三权分开",
+    "secret 按角色隔离：marketing bot 拿不到生产凭证",
+    "目标感知执行：任务带 goal ancestry，agent 知道 why 不只知道标题",
+    "预算硬停：公司/agent/项目三级预算，到线自动暂停",
+    "可移植的公司：org/agent/skill 导出导入，secret 自动 scrub",
+    "多公司隔离：一次部署跑多家，数据与审计各自独立"
+  ]],
+  ["核心技术", [
+    ["Control plane 十二系统", [
+      "Identity & Access · Work & Tasks · Heartbeat Execution · Governance & Approvals",
+      "Org Chart & Agents · Workspaces & Runtime · Plugins · Budget & Costs",
+      "Routines & Schedules · Secrets & Storage · Activity & Events · Company Portability",
+      "Paperclip 拥有组织的观察/任务/预算/治理语义；agent 拥有自己的 prompt/模型/runtime"
+    ]],
+    ["沙盒插件（已交付）", [
+      "E2B / Cloudflare / Daytona / Modal / Novita / Kubernetes",
+      "remote execution，但 control-plane 模型不变"
+    ]],
+    ["记忆插件（实验中）", [
+      "Mem0 / Zep / Supermemory / Cognee / Honcho",
+      "记忆是外挂的，不是内置一等公民"
+    ]],
+    ["MCP Tool Gateway", [
+      "受治理的工具网关：公司边界 + 审批门 + 行为归因"
+    ]],
+    ["已交付的其他里程碑", [
+      "companies.sh：公司导入导出；AGENTS.md 配置；Skills Manager/Studio/Store",
+      "Scheduled Routines；Better Budgeting；Reviews & Approvals",
+      "Deep Planning（revisioned plans）；Enforced Outcomes（watchdog+review gate）",
+      "Bounded run recovery；Agent evals；Connected Apps；Company-Wide Search"
+    ]]
+  ]],
+  ["Roadmap 野心（⚪ 计划项）", [
+    "MAXIMIZER MODE：更高自主——更激进 delegation、更深 follow-through，但不是 hidden autonomy",
+    "Self-Organization：agent 可提议调组织架构（角色/汇报线/新 routine），仍在审批边界内",
+    "Automatic Organizational Learning：做完的活变成 playbook 与 decision pattern",
+    "Bring-your-own-ticket-system：Asana/Linear/Jira 只当 on-ramp",
+    "🟡 实验中：Agent Chat（含 CEO Chat）、Cloud deployments、Memory/Knowledge"
+  ]],
+  ["What Paperclip is not", [
+    "不是 chatbot：agent 有 job，没有 chat window",
+    "不是 agent framework：不教你怎么造 agent",
+    "不是 workflow builder：没有拖拽 pipeline",
+    "不是 prompt manager：agent 自带 prompt/model/runtime",
+    "不是单 agent 工具：一个 agent 不需要 Paperclip，二十个需要",
+    "不是 code review 工具：编排的是工作，不是 PR"
+  ]],
+  ["对照（同晚阵容）", [
+    "vs oar（143 star）：oar 统一 harness 编程接口，Paperclip 是它的消费者侧——multi-harness teams 正是 oar 想解决的问题",
+    "vs Raft（~13 star 文档仓）：同赛道，体量差四个数量级；Raft 闭源 SaaS，Paperclip MIT 自托管",
+    "vs Lody：Lody 用 ACP 统一接入，Paperclip 用 heartbeat——门槛更低，bash 脚本都能当员工",
+    "vs OpenAgentCore（105 star）：同是 control plane；OpenAgentCore 自顶向下做 infra（OpenAI Agents API），Paperclip 自底向上做组织",
+    "vs Loro（6.2k）：Loro 可做任务/文档的多端一致性底座",
+    "TiDB 联创 CTO 自称 Agent Resource Manager——Paperclip 就是把这个职位产品化"
+  ]],
+  ["风险与边界", [
+    "快：7 个月 4.7k commits，概念与 API 还在 churn",
+    "重：为 20 个 agent 设计，1 个 agent 是杀鸡用牛刀（官方原话）",
+    "自托管税：运维自己的事；Cloud 版还在 waitlist",
+    "95k star 的概念吸引力 vs 真实部署——“If OpenClaw is an employee…”本身就是增长引擎",
+    "记忆外挂：长期记忆的“灵魂”问题交给了 Mem0/Zep 们"
+  ]]
+]];
+
+const tree = document.getElementById('tree');
+function build(nodes, depth) {
+  const ul = document.createElement('ul');
+  if (depth > 0) ul.className = 'tree';
+  nodes.forEach(n => {
+    const li = document.createElement('li');
+    const isBranch = Array.isArray(n[1]);
+    const title = isBranch ? n[0] : n;
+    li.className = 'node ' + (isBranch ? (depth === 0 ? 'root' : depth === 1 ? 'l1' : '') : 'leaf');
+    const label = document.createElement('span');
+    label.className = 'label';
+    const caret = document.createElement('span');
+    caret.className = 'caret';
+    caret.textContent = isBranch ? '▾' : '·';
+    const text = document.createElement('span');
+    text.className = 'text';
+    text.textContent = title;
+    label.appendChild(caret); label.appendChild(text);
+    li.appendChild(label);
+    if (isBranch) {
+      const child = build(n[1], depth + 1);
+      li.appendChild(child);
+      label.addEventListener('click', () => {
+        child.classList.toggle('collapsed');
+        caret.textContent = child.classList.contains('collapsed') ? '▸' : '▾';
+      });
+    }
+    ul.appendChild(li);
+  });
+  return ul;
+}
+tree.appendChild(build(data[1], 1));
+document.getElementById('expandAll').onclick = () => {
+  tree.querySelectorAll('ul.collapsed').forEach(u => u.classList.remove('collapsed'));
+  tree.querySelectorAll('.caret').forEach(c => { if (c.textContent !== '·') c.textContent = '▾'; });
+};
+document.getElementById('collapseAll').onclick = () => {
+  tree.querySelectorAll('ul ul').forEach(u => u.classList.add('collapsed'));
+  tree.querySelectorAll('.caret').forEach(c => { if (c.textContent !== '·') c.textContent = '▸'; });
+};
+</script>
+</body>
+</html>
